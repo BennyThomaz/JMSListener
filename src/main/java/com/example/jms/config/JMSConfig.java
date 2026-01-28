@@ -71,6 +71,11 @@ public class JMSConfig {
         return config.getString("jms.security.credentials");
     }
     
+    // Provider Configuration
+    public String getProviderConfigFile() {
+        return config.getString("jms.provider.config.file", "generic.provider.json");
+    }
+    
     // JNDI Timeout Properties
     public long getJndiTimeout() {
         return config.getLong("jms.jndi.timeout", 30000L); // Default 30 seconds
@@ -201,5 +206,14 @@ public class JMSConfig {
     
     public boolean isTransactionRollbackDelayEnabled() {
         return getTransactionRollbackDelay() > 0;
+    }
+
+    // Idle Reconnect Settings
+    public long getIdleReconnectInterval() {
+        return config.getLong("jms.idle.reconnect.interval", 1800000L); // Default 30 minutes
+    }
+
+    public boolean isIdleReconnectEnabled() {
+        return getIdleReconnectInterval() > 0;
     }
 }

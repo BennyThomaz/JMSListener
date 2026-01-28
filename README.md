@@ -29,10 +29,19 @@ src/
 │   │       │   └── CompositeMessageCallback.java # Multiple callback support
 │   │       ├── config/
 │   │       │   └── JMSConfig.java             # Configuration manager
+│   │       ├── provider/
+│   │       │   ├── JMSProviderConfig.java         # Provider interface
+│   │       │   └── JsonProviderConfig.java        # JSON-based provider implementation
 │   │       └── listener/
 │   │           └── JMSListener.java           # Main JMS listener class
 │   └── resources/
-│       ├── application.properties             # Default configuration
+│       ├── config/
+│       │   ├── weblogic.provider.json            # WebLogic provider configuration
+│       │   ├── artemis.provider.json             # Artemis provider configuration  
+│       │   ├── activemq.provider.json            # ActiveMQ provider configuration
+│       │   └── generic.provider.json             # Generic JMS provider configuration
+│       ├── application.properties             # Default configuration (WebLogic)
+│       ├── application-artemis.properties     # Apache Artemis AMQ configuration
 │       ├── application-http.properties        # HTTP callback configuration
 │       ├── application-transacted.properties  # Transacted mode configuration
 │       └── logback.xml                       # Logging configuration
@@ -40,10 +49,14 @@ src/
 ├── logs/                                     # Application logs
 ├── pom.xml                                   # Maven configuration
 ├── build.bat                                 # Windows build script
+├── start-artemis.bat                         # Run with Apache Artemis configuration
 ├── run-transacted.bat                        # Run with transaction support
 ├── run-test-server.bat                       # Start transaction test server
 ├── transaction-test-server.py                # HTTP failure simulation server
+├── ARTEMIS_CONFIG.md                         # Apache Artemis configuration guide
+├── JSON_PROVIDER_CONFIG.md                   # JSON-based provider configuration guide
 ├── TRANSACTION_ROLLBACK.md                   # Transaction rollback documentation
+├── WEBLOGIC_CONFIG.md                        # WebLogic-specific configuration guide
 └── README.md                                 # This file
 ```
 
@@ -51,8 +64,10 @@ src/
 
 - Java 11 or higher
 - Maven 3.6 or higher
-- WebLogic Server with configured JMS resources
-- Access to WebLogic JMS queue and connection factory
+- **JMS Provider**: One of the following:
+  - **WebLogic Server** with configured JMS resources
+  - **Apache Artemis AMQ** broker
+- Access to JMS queue and connection factory
 - **WebLogic Client JAR**: Place `wlclient.jar` in the `lib/` directory (see `lib/README.md` for details)
 
 ## Configuration
@@ -87,6 +102,11 @@ jms.consumer.no.local=false
 # JNDI timeout settings (in milliseconds)
 jms.jndi.timeout=60000
 jms.jndi.read.timeout=120000
+
+# Idle Reconnection
+# Interval in milliseconds to reconnect if no messages received (default: 30 minutes)
+# Set to 0 to disable
+jms.idle.reconnect.interval=1800000
 ```
 
 ### Application Settings
@@ -102,9 +122,81 @@ app.max.retry.attempts=3
 app.retry.delay=5000
 ```
 
+## JMS Provider Configuration
+
+The application supports multiple JMS providers through individual JSON configuration files. Each provider has its own configuration file that contains JNDI environment properties specific to that provider.
+
+### Configuration File Selection
+
+Specify which provider configuration to use in your `application.properties`:
+
+```properties
+# Provider configuration file (in config/ directory)
+jms.provider.config.file=weblogic.provider.json
+```
+
+### Available Provider Files
+
+- **weblogic.provider.json** - WebLogic Server optimizations
+- **artemis.provider.json** - Apache Artemis AMQ optimizations  
+- **activemq.provider.json** - Apache ActiveMQ Classic optimizations
+- **generic.provider.json** - Generic JMS provider (minimal configuration)
+
+### Provider File Format
+
+Each provider file contains a simple "properties" object with key-value pairs:
+
+```json
+{
+  "properties": {
+    "weblogic.jndi.connectTimeout": "15000",
+    "weblogic.jndi.readTimeout": "30000", 
+    "weblogic.jndi.connectionRetryCount": "3",
+    "weblogic.jndi.tcpNoDelay": "true"
+  }
+}
+```
+
+### WebLogic Server Configuration
+```properties
+# In application.properties
+jms.provider.config.file=weblogic.provider.json
+jms.initial.context.factory=weblogic.jndi.WLInitialContextFactory
+jms.provider.url=t3://localhost:7001
+```
+
+### Apache Artemis AMQ Configuration
+```properties
+# In application-artemis.properties  
+jms.provider.config.file=artemis.provider.json
+jms.initial.context.factory=org.apache.activemq.artemis.jndi.ActiveMQInitialContextFactory
+jms.provider.url=tcp://localhost:61616
+```
+
+Use the appropriate configuration file:
+- **WebLogic**: Set `jms.provider.config.file=weblogic.provider.json`  
+- **Artemis**: Set `jms.provider.config.file=artemis.provider.json`
+- **ActiveMQ**: Set `jms.provider.config.file=activemq.provider.json`
+- **Other**: Set `jms.provider.config.file=generic.provider.json`
+
+For detailed Artemis configuration, see: **[ARTEMIS_CONFIG.md](ARTEMIS_CONFIG.md)**
+
 ## Building the Application
 
-**Important**: Before building, ensure you have placed `wlclient.jar` in the `lib/` directory. See `lib/README.md` for instructions.
+### Dependencies
+
+**For WebLogic**: Place `wlclient.jar` in the `lib/` directory. See `lib/README.md` for instructions.
+
+**For Artemis**: Add Artemis client dependency to `pom.xml`:
+```xml
+<dependency>
+    <groupId>org.apache.activemq</groupId>
+    <artifactId>artemis-jms-client</artifactId>
+    <version>2.32.0</version>
+</dependency>
+```
+
+### Build Steps
 
 1. **Install Dependencies**:
    ```bash
@@ -387,3 +479,81 @@ jms.jndi.read.timeout=120000
 - Better error handling for network issues
 
 For detailed configuration guidance, see: **[Docs\JNDI_TIMEOUT.md](Docs\JNDI_TIMEOUT.md)**
+
+## Provider Architecture
+
+The application uses a **simplified JSON-based provider configuration system** that loads provider-specific JNDI properties from individual JSON files:
+
+- **WebLogic Server**: `weblogic.provider.json` with WebLogic-specific optimizations
+- **Apache Artemis**: `artemis.provider.json` with Artemis-specific optimizations  
+- **Apache ActiveMQ**: `activemq.provider.json` with ActiveMQ-specific optimizations
+- **Generic JMS**: `generic.provider.json` for other JMS providers
+- **Extensible**: Easy to add new providers by creating new JSON files
+
+### Configuration-Driven Approach
+
+Provider configurations are defined in individual JSON files in `src/main/resources/config/`:
+
+**weblogic.provider.json**:
+```json
+{
+  "properties": {
+    "weblogic.jndi.connectTimeout": "15000",
+    "weblogic.jndi.readTimeout": "30000",
+    "weblogic.jndi.connectionRetryCount": "3",
+    "weblogic.jndi.tcpNoDelay": "true",
+    "weblogic.jndi.WLContext.ENABLE_SERVER_AFFINITY": "false"
+  }
+}
+```
+
+**artemis.provider.json**:
+```json
+{
+  "properties": {
+    "connection.ttl": "15000",
+    "connection.retry.interval": "5000", 
+    "consumer.window.size": "1048576",
+    "producer.window.size": "65536",
+    "connection.compression.enabled": "false"
+  }
+}
+```
+
+### How It Works
+
+1. **Configuration**: Set `jms.provider.config.file=weblogic.provider.json` in application.properties
+2. **Loading**: `JsonProviderConfig` loads the specified JSON file
+3. **Application**: All properties from the JSON file are applied directly to the JNDI environment
+4. **No Code Changes**: Add new providers by creating new JSON files
+
+### Benefits
+
+- **No Code Changes**: Add new providers without Java modifications
+- **Maintainable**: All provider logic in simple JSON configuration files
+- **Flexible**: Easy to override properties per environment
+- **Testable**: Easy to validate and test configurations
+- **Simple**: Direct property mapping from JSON to JNDI environment
+
+Provider selection is explicit via the `jms.provider.config.file` property.
+
+For detailed information, see: **[JSON_PROVIDER_CONFIG.md](JSON_PROVIDER_CONFIG.md)**
+
+### Adding New Providers
+
+To add support for a new JMS provider:
+
+1. **Create JSON file**: Add a new `.provider.json` file in `src/main/resources/config/`
+2. **Define properties**: Add provider-specific JNDI properties to the "properties" object
+3. **Configure**: Set `jms.provider.config.file=yourprovider.provider.json` in application.properties
+
+Example new provider file (`myprovider.provider.json`):
+```json
+{
+  "properties": {
+    "com.myprovider.timeout": "30000",
+    "com.myprovider.retries": "3",
+    "com.myprovider.poolsize": "10"
+  }
+}
+```

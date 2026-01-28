@@ -1,0 +1,19 @@
+{
+  "properties": {
+    "connection.ttl": "15000",
+    "connection.retry.interval": "5000",
+    "connection.retry.interval.multiplier": "2.0",
+    "connection.max.retry.interval": "30000",
+    "connection.reconnect.attempts": "3",
+    "consumer.window.size": "1048576",
+    "consumer.max.rate": "-1",
+    "producer.window.size": "65536",
+    "producer.max.rate": "-1",
+    "connection.compression.enabled": "false",
+    "connection.confirmation.window.size": "32768",
+    "connection.load.balancing.policy.class.name": "org.apache.activemq.artemis.api.core.client.loadbalance.RoundRobinConnectionLoadBalancingPolicy",
+    "connection.failover.on.initial.connection": "false",
+    "connection.failover.reconnect.attempts": "5",
+    "connection.failover.reconnect.interval": "2000"
+  }
+}

@@ -42,6 +42,18 @@ if %ERRORLEVEL% EQU 0 (
         ) else (
             echo Warning: Failed to copy application.properties
         )
+        
+        echo.
+        echo Copying provider configuration files...
+        if not exist "target\config" mkdir "target\config"
+        copy "src\main\resources\config\*.json" "target\config\" >nul
+        if exist "target\config\weblogic.provider.json" (
+            echo Provider configuration files copied successfully!
+            echo Available provider files:
+            dir "target\config\*.json" /b
+        ) else (
+            echo Warning: Failed to copy provider configuration files
+        )
     ) else (
         echo.
         echo Package creation failed!

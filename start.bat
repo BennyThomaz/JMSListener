@@ -15,9 +15,10 @@ set JAVA_OPTS=%JAVA_OPTS% -Dweblogic.log.DebugJMS=true
 
 
 REM Set classpath
-set CLASSPATH=%APP_HOME%target\jms-listener-1.0.0-jar-with-dependencies.jar
-set CLASSPATH=%CLASSPATH%;%APP_HOME%lib\wlthint3client.jar
-
+REM set CLASSPATH=%APP_HOME%target\jms-listener-1.0.0-jar-with-dependencies.jar
+REM set CLASSPATH=%CLASSPATH%;%APP_HOME%lib\wlthint3client.jar
+set CLASSPATH=%APP_HOME%lib\wlthint3client.jar
+set CLASSPATH=%CLASSPATH%;%APP_HOME%target\jms-listener-1.0.0-jar-with-dependencies.jar
 REM Configuration file
 set CONFIG_FILE=%APP_HOME%src\main\resources\application.properties
 if not exist "%CONFIG_FILE%" (

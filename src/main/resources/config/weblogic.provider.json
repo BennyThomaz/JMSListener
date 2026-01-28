@@ -1,0 +1,12 @@
+{
+  "properties": {
+    "weblogic.jndi.connectTimeout": "15000",
+    "weblogic.jndi.readTimeout": "30000",
+    "weblogic.jndi.connectionRetryCount": "3",
+    "weblogic.jndi.connectionRetryInterval": "5000",
+    "weblogic.jndi.tcpNoDelay": "true",
+    "weblogic.jndi.WLContext.ENABLE_SERVER_AFFINITY": "false",
+    "weblogic.socket.ConnectTimeout": "15000",
+    "weblogic.socket.SocketTimeout": "30000"
+  }
+}
