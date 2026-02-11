@@ -153,6 +153,10 @@ public class JMSListener implements MessageListener {
             env.put(Context.SECURITY_CREDENTIALS, config.getSecurityCredentials());
         }
         
+/*        logger.info("JNDI principal='{}', credentials='{}'",
+            config.getSecurityPrincipal(),
+            config.getSecurityCredentials());  */
+
         logger.debug("JNDI timeout configuration: connectTimeout={}ms, readTimeout={}ms", 
                     config.getJndiTimeout(), config.getJndiReadTimeout());
         logger.info("Attempting JNDI connection to: {}", config.getProviderUrl());
@@ -452,6 +456,7 @@ public class JMSListener implements MessageListener {
                     Thread.currentThread().interrupt();
                     logger.warn("Reconnection interrupted. Stopping listener");
                     stop();
+                    System.exit(1);
                     return;
                 }
             }
@@ -460,6 +465,7 @@ public class JMSListener implements MessageListener {
         if (running.get()) {
             logger.error("Failed to reconnect after {} attempts. Stopping listener.", attempts);
             stop();
+            System.exit(1);
         }
     }
     
